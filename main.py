@@ -70,12 +70,14 @@ def main():
                             video_link_list.append(video_link)
                 # Go to next web page
                 webpage += 1
+
             # Print information about writing all data to category file
             print(f"Writing \"{category}\" data to file.")
             # Create or override file with new titles and video links for certain category
             with open(f"video-list-{category}.txt", "w", encoding='utf-8') as file:
                 # Write data to file line by line
                 file.write('\n'.join([_ for _ in video_link_list]))
+                
         # Close Chrome browser
         driver.close()
 
