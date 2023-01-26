@@ -1,37 +1,41 @@
 #!/usr/bin/python3
 
 # Import packages
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 import platform
-
-"""
-Script is searching for selected categories one by one on pornhub, scraping using selenium provided amount of pages of each 
-pornhub category and writing video titles as well as links to files.
-Successful on minimum Python 3.8 and Chrome version 85 (https://chromedriver.chromium.org/downloads).
-"""
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 # Example list of search categories to scrap pornhub with selenium
 search_categories = ["teen", "amateur", "milf", "lesbian"]
 
 
 def main():
+    """
+    Script is searching for selected categories one by one on pornhub, scraping using selenium
+    provided amount of pages of each pornhub category and writing video titles
+    as well as links to files. Download chromedriver from https://chromedriver.chromium.org/downloads.
+    """
+
     try:
         # Checking what is the running system type
         if platform.system() == "Windows":
             # Initiate Chrome driver for Windows
-            driver = webdriver.Chrome('chromedriver.exe')
+            driver = webdriver.Chrome("chromedriver.exe")
+        elif platform.system() == "Darwin":
+            # Initiate Chrome driver for OSX
+            driver = webdriver.Chrome("chromedriver-osx")
         else:
             # Initiate other Chrome driver if available
-            driver = webdriver.Chrome('chromedriver')
+            driver = webdriver.Chrome("chromedriver")
 
         # Open pornhub.com in Chrome browser
-        driver.get('https://pornhub.com')
+        driver.get("https://pornhub.com")
 
         # For each category from the list make scrap
         for category in search_categories:
             # Find search bar input object in html code by ID
-            search_bar = driver.find_element_by_id('searchInput')
+            search_bar = driver.find_element(By.ID, "searchInput")
             # Clean search bar
             search_bar.clear()
             # Write category name in the search bar
@@ -56,7 +60,7 @@ def main():
                 driver.get(f"{main_url}&page={str(webpage)}")
 
                 # Find all html blocks in code which starts with "<a>" tag and includes "href" attribute
-                html_object_list = driver.find_elements_by_xpath("//a[@href]")
+                html_object_list = driver.find_elements(By.XPATH, "//a[@href]")
 
                 # For each "<a>" tag object from the list get video title and link value
                 for html_object in html_object_list:
@@ -66,8 +70,7 @@ def main():
                     if "view_video.php" in video_link and video_title is not None:
                         # If video link is not yet in the link list append it with title
                         if video_link not in video_link_list:
-                            video_link_list.append(video_title)
-                            video_link_list.append(video_link)
+                            video_link_list.append(f"{video_title},{video_link}")
                 # Go to next web page
                 webpage += 1
 
@@ -77,14 +80,13 @@ def main():
             with open(f"video-list-{category}.txt", "w", encoding='utf-8') as file:
                 # Write data to file line by line
                 file.write('\n'.join([_ for _ in video_link_list]))
-                
+
         # Close Chrome browser
         driver.close()
 
     # Print other errors that can occur
-    except Exception as e:
-        print(f"ERROR: {e}")
-
+    except Exception as exception:
+        print(f"ERROR: {exception}")
 
 # Run the script
 if __name__ == '__main__':
