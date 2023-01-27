@@ -5,35 +5,41 @@ import platform
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
 
 # Example list of search categories to scrap pornhub with selenium
-search_categories = ["teen", "amateur", "milf", "lesbian"]
+SEARCH_CATEGORIES = ["teen", "amateur", "milf", "lesbian"]
+
+# Max web pages to scrap
+MAX_WEBPGES = 10
 
 
 def main():
     """
-    Script is searching for selected categories one by one on pornhub, scraping using selenium
-    provided amount of pages of each pornhub category and writing video titles
-    as well as links to files. Download chromedriver from https://chromedriver.chromium.org/downloads.
+    Script is searching for selected categories one by one on pornhub using Chrome browser,
+    scraping using selenium provided amount of pages of each pornhub category and writing video titles
+    as well as links to file. Download chromedriver from https://chromedriver.chromium.org/downloads.
+    The browser must be open, if it will be hidden down there will be driver error.
     """
 
     try:
         # Checking what is the running system type
         if platform.system() == "Windows":
             # Initiate Chrome driver for Windows
-            driver = webdriver.Chrome("chromedriver.exe")
+            service = Service("chromedriver.exe")
         elif platform.system() == "Darwin":
             # Initiate Chrome driver for OSX
-            driver = webdriver.Chrome("chromedriver-osx")
-        else:
-            # Initiate other Chrome driver if available
-            driver = webdriver.Chrome("chromedriver")
+            service = Service("chromedriver-osx")
+        elif platform.system() == "Linux":
+            # Initiate Chrome driver for Linux
+            service = Service("chromedriver")
+        driver = webdriver.Chrome(service=service)
 
-        # Open pornhub.com in Chrome browser
+        # Open pornhub.com website in Chrome browser
         driver.get("https://pornhub.com")
 
         # For each category from the list make scrap
-        for category in search_categories:
+        for category in SEARCH_CATEGORIES:
             # Find search bar input object in html code by ID
             search_bar = driver.find_element(By.ID, "searchInput")
             # Clean search bar
@@ -47,13 +53,11 @@ def main():
             main_url = driver.current_url
             # Start web page number
             webpage = 1
-            # Max web pages to scrap
-            max_webpages = 10
-            # List to append titles and video links to write into file or any DB
+            # List to append titles and video links to write into csv like file
             video_link_list = []
 
             # Scrap "max_webpages" from provided category name
-            while webpage <= max_webpages:
+            while webpage <= MAX_WEBPGES:
                 # Print information about category and page currently scraped
                 print(f"Scraping \"{category}\" page {webpage}.")
                 # Open the appropriate url in the browser
@@ -67,19 +71,18 @@ def main():
                     video_title = html_object.get_attribute("data-title")
                     video_link = html_object.get_attribute("href")
                     # Verify if the object for sure is valid video link with title
-                    if "view_video.php" in video_link and video_title is not None:
-                        # If video link is not yet in the link list append it with title
-                        if video_link not in video_link_list:
-                            video_link_list.append(f"{video_title},{video_link}")
+                    if "view_video.php" in video_link and video_title is not None and video_link not in video_link_list:
+                        video_link_list.append(f"{video_title},{video_link}")
                 # Go to next web page
                 webpage += 1
 
             # Print information about writing all data to category file
             print(f"Writing \"{category}\" data to file.")
             # Create or override file with new titles and video links for certain category
-            with open(f"video-list-{category}.txt", "w", encoding='utf-8') as file:
+            with open(f"video-list-{category}.csv", "w", encoding='utf-8') as file:
                 # Write data to file line by line
-                file.write('\n'.join([_ for _ in video_link_list]))
+                file.write('\n'.join(_ for _ in video_link_list))
+            file.close()
 
         # Close Chrome browser
         driver.close()
@@ -87,6 +90,7 @@ def main():
     # Print other errors that can occur
     except Exception as exception:
         print(f"ERROR: {exception}")
+
 
 # Run the script
 if __name__ == '__main__':
